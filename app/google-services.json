@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "740523014887",
+    "project_id": "opsc-project-1d108",
+    "storage_bucket": "opsc-project-1d108.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740523014887:android:248b6029f49f2ed0d50042",
+        "android_client_info": {
+          "package_name": "com.opsc.timeriseprojectmain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDG7rmZn4AG6wBuHjeHvm_aNz-Q_ShZzZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

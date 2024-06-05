@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#262626">
+
+    <!-- TextView with an icon on the left and text "TimeRise" -->
+    <LinearLayout
+        android:id="@+id/timeRiseContainer"
+        android:layout_width="162dp"
+        android:layout_height="57dp"
+        android:layout_marginLeft="-20dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/rounded_background"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        >
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="15dp"
+            android:contentDescription="@string/time_rise_icon_desc"
+            android:src="@drawable/screenshot_2024_04_28_191523" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="8dp"
+            android:text="TimeRise"
+            android:textColor="@android:color/black"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+    <!-- Buttons for setting min and max hours -->
+    <LinearLayout
+        android:id="@+id/minMaxHoursContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/button_set_min_hours"
+            android:layout_width="101dp"
+            android:layout_height="57dp"
+            android:layout_marginTop="0dp"
+            android:background="@drawable/rounded_button_background"
+            android:onClick="setMinHours"
+            android:text="Min Hours"
+            android:textColor="@color/black" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/button_set_max_hours"
+            android:layout_width="101dp"
+            android:layout_height="57dp"
+            android:layout_marginTop="0dp"
+
+            android:layout_marginStart="8dp"
+            android:background="@drawable/rounded_button_background"
+            android:onClick="setMaxHours"
+            android:text="Max Hours"
+            android:textColor="@color/black" />
+    </LinearLayout>
+    <!-- RecyclerView for "Recent" entries -->
+    <EditText
+        android:id="@+id/editRecentText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_marginTop="90dp"
+        android:layout_marginLeft="10dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="Coming Up :"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:background="@null" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_soonest_time_entries"
+        android:layout_width="match_parent"
+        android:layout_height="345dp"
+        android:layout_below="@id/editRecentText"
+        android:layout_marginTop="10dp" />
+
+    <!-- RecyclerView for "Workspaces" -->
+    <EditText
+        android:id="@+id/editWorkspacesText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/recycler_view_soonest_time_entries"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="Workspaces:"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:background="@null" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_categories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editWorkspacesText"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:textColor="@android:color/white" />
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/button_add_category"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#fff"
+        android:contentDescription="@string/add_new_category"
+        android:src="@drawable/ic_add" />
+
+</RelativeLayout>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TImeRiseProjectMain</string>
+    <string name="add_new_category">Add New Category</string>
+    <string name="time_rise_icon_desc"></string>
+</resources>

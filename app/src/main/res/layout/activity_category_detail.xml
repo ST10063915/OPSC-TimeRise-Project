@@ -1,0 +1,86 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#333">
+
+    <!-- Header Text for displaying "Tasks :" -->
+    <EditText
+        android:id="@+id/editRecentText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="Tasks :"
+        android:textColor="@android:color/white"
+        android:textSize="25sp"
+        android:background="@null" />
+
+    <!-- EditText for Start Date Selection -->
+    <EditText
+        android:id="@+id/startDateInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Start Date"
+        android:layout_below="@id/editRecentText"
+        android:layout_marginTop="16dp"
+        android:focusable="false"
+        android:clickable="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:textColorHint="#aaa"
+        android:textColor="@android:color/black"
+        android:background="@drawable/edit_text_background" />
+
+    <!-- EditText for End Date Selection -->
+    <EditText
+        android:id="@+id/endDateInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="End Date"
+        android:layout_below="@id/startDateInput"
+        android:layout_marginTop="16dp"
+        android:focusable="false"
+        android:clickable="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:textColorHint="#aaa"
+        android:textColor="@android:color/black"
+        android:background="@drawable/edit_text_background" />
+
+    <!-- RecyclerView for displaying timesheet entries -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_timesheet_entries"
+        android:layout_width="match_parent"
+        android:layout_height="471dp"
+        android:layout_above="@id/button_add_time_entry"
+        android:layout_below="@id/endDateInput"
+        android:layout_marginTop="57dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Button to add new time entries -->
+    <Button
+        android:id="@+id/button_add_time_entry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#fff"
+        android:textColor="@color/black" />
+
+    <!-- TextView to Display Total Hours -->
+    <TextView
+        android:id="@+id/totalHoursText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/endDateInput"
+        android:layout_marginTop="16dp"
+        android:text="Total Hours: 0"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="@android:color/white"
+        android:gravity="center_horizontal" />
+</RelativeLayout>
