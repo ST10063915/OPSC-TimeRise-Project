@@ -3,6 +3,7 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven("https://jitpack.io") // Added JitPack repository
     }
 }
 dependencyResolutionManagement {
@@ -10,9 +11,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io") // Added JitPack repository
     }
 }
 
 rootProject.name = "TImeRiseProjectMain"
 include(":app")
- 

@@ -49,14 +49,21 @@
         android:textColor="@android:color/black"
         android:background="@drawable/edit_text_background" />
 
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/lineChart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_below="@+id/totalHoursText"
+        android:layout_marginTop="16dp" />
+
     <!-- RecyclerView for displaying timesheet entries -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_timesheet_entries"
         android:layout_width="match_parent"
         android:layout_height="471dp"
         android:layout_above="@id/button_add_time_entry"
-        android:layout_below="@id/endDateInput"
-        android:layout_marginTop="57dp"
+        android:layout_below="@+id/lineChart"
+        android:layout_marginTop="25dp"
         android:layout_marginBottom="16dp" />
 
     <!-- Button to add new time entries -->

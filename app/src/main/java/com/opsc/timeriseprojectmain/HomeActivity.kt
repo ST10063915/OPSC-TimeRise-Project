@@ -23,10 +23,25 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import java.io.ByteArrayOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class HomeActivity : AppCompatActivity() {
 
@@ -40,6 +55,10 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var buttonSetMinHours: Button
     private lateinit var buttonSetMaxHours: Button
+    private lateinit var buttonViewPerformance: Button
+    private lateinit var lineChart: LineChart
+    private lateinit var pieChart: PieChart
+    private lateinit var textViewChartStatus: TextView
     private var minHours: Float = 0f
     private var maxHours: Float = 0f
 
@@ -78,6 +97,7 @@ class HomeActivity : AppCompatActivity() {
 
         buttonSetMinHours = findViewById(R.id.button_set_min_hours)
         buttonSetMaxHours = findViewById(R.id.button_set_max_hours)
+        buttonViewPerformance = findViewById(R.id.button_view_performance)
 
         buttonSetMinHours.setOnClickListener {
             showSetMinHoursDialog()
@@ -87,10 +107,31 @@ class HomeActivity : AppCompatActivity() {
             showSetMaxHoursDialog()
         }
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        buttonViewPerformance.setOnClickListener {
+            loadUserData()
+        }
 
-        loadUserData()
+
+
+        lineChart = findViewById(R.id.lineChart)
+        pieChart = findViewById(R.id.pieChart)
+        textViewChartStatus = findViewById(R.id.textViewChartStatus)
+
+        // Set default dates
+        val calendar = Calendar.getInstance()
+        val endDate = calendar.time
+        calendar.add(Calendar.DAY_OF_YEAR, -30)
+        val startDate = calendar.time
+
+        SettingsManager.getWorkHours { min, max ->
+            minHours = min
+            maxHours = max
+            updateChart(startDate, endDate)
+        }
+
         loadWorkHours()
+        loadUserData()
+
     }
 
     private fun loadUserData() {
@@ -100,7 +141,10 @@ class HomeActivity : AppCompatActivity() {
         }
         TimesheetManager.loadTimesheetEntriesFromFirestore { timesheetEntries ->
             timesheetEntryAdapter.updateEntries(timesheetEntries)
+            updateChartForAllEntries(timesheetEntries)
+            updatePieChart(timesheetEntries)
         }
+
     }
 
     private fun loadWorkHours() {
@@ -110,42 +154,206 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSetMinHoursDialog() {
-        val layoutInflater = LayoutInflater.from(this)
-        val view = layoutInflater.inflate(R.layout.dialog_set_hours, null)
-        val editTextMinHours = view.findViewById<EditText>(R.id.editText_hours)
+    private fun updateChart(startDate: Date, endDate: Date) {
+        val entries = TimesheetManager.getEntriesWithinDateRange(startDate, endDate)
+            .groupBy { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it.date) }
+            .map { (date, entries) ->
+                val totalHours = entries.sumByDouble {
+                    calculateHours(it.startTime, it.endTime)
+                }
+                Entry(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date).time.toFloat(), totalHours.toFloat())
+            }.sortedBy { it.x } // Sort entries by date
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Set Minimum Hours")
-            .setView(view)
-            .setPositiveButton("Set") { dialog, _ ->
-                minHours = editTextMinHours.text.toString().toFloatOrNull() ?: 0f
-                SettingsManager.saveWorkHours(this, minHours, maxHours)
-                dialog.dismiss()
+        val dataSet = LineDataSet(entries, "Hours Worked")
+        dataSet.color = Color.BLUE
+        dataSet.setCircleColor(Color.BLUE)
+        dataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val minEntries = listOf(
+            Entry(startDate.time.toFloat(), minHours),
+            Entry(endDate.time.toFloat(), minHours)
+        )
+
+        val maxEntries = listOf(
+            Entry(startDate.time.toFloat(), maxHours),
+            Entry(endDate.time.toFloat(), maxHours)
+        )
+
+        val minDataSet = LineDataSet(minEntries, "Min Hours")
+        minDataSet.color = Color.GREEN
+        minDataSet.setCircleColor(Color.GREEN)
+        minDataSet.axisDependency = YAxis.AxisDependency.LEFT
+        minDataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val maxDataSet = LineDataSet(maxEntries, "Max Hours")
+        maxDataSet.color = Color.RED
+        maxDataSet.setCircleColor(Color.RED)
+        maxDataSet.axisDependency = YAxis.AxisDependency.LEFT
+        maxDataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val lineData = LineData(dataSet, minDataSet, maxDataSet)
+        lineChart.data = lineData
+        lineChart.setNoDataTextColor(Color.WHITE) // Set "no data" text color to white
+        lineChart.description.textColor = Color.WHITE // Set description text color to white
+        lineChart.legend.textColor = Color.WHITE // Set legend text color to white
+
+        val xAxis = lineChart.xAxis
+        xAxis.textColor = Color.WHITE // Set x-axis text color to white
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.valueFormatter = object : ValueFormatter() {
+            private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            override fun getFormattedValue(value: Float): String {
+                return dateFormatter.format(Date(value.toLong()))
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.cancel()
-            }
-            .show()
+        }
+
+        val leftAxis = lineChart.axisLeft
+        leftAxis.textColor = Color.WHITE // Set left y-axis text color to white
+
+        val rightAxis = lineChart.axisRight
+        rightAxis.textColor = Color.WHITE // Set right y-axis text color to white
+
+        lineChart.invalidate() // Refresh the chart
     }
 
-    private fun showSetMaxHoursDialog() {
-        val layoutInflater = LayoutInflater.from(this)
-        val view = layoutInflater.inflate(R.layout.dialog_set_hours, null)
-        val editTextMaxHours = view.findViewById<EditText>(R.id.editText_hours)
+    private fun updateChartForAllEntries(entries: List<TimesheetEntry>) {
+        val calendar = Calendar.getInstance()
+        val endDate = calendar.time
+        calendar.add(Calendar.DAY_OF_YEAR, -30)
+        val startDate = calendar.time
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Set Maximum Hours")
-            .setView(view)
-            .setPositiveButton("Set") { dialog, _ ->
-                maxHours = editTextMaxHours.text.toString().toFloatOrNull() ?: 24f // Default to 24 hours if input is invalid
-                SettingsManager.saveWorkHours(this, minHours, maxHours)
-                dialog.dismiss()
+        val filteredEntries = entries.filter { it.date in startDate..endDate }
+            .groupBy { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it.date) }
+            .map { (date, entries) ->
+                val totalHours = entries.sumByDouble {
+                    calculateHours(it.startTime, it.endTime)
+                }
+                Entry(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date).time.toFloat(), totalHours.toFloat())
+            }.sortedBy { it.x } // Sort entries by date
+
+        val dataSet = LineDataSet(filteredEntries, "Hours Worked")
+        dataSet.color = Color.BLUE
+        dataSet.setCircleColor(Color.BLUE)
+        dataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val minEntries = listOf(
+            Entry(startDate.time.toFloat(), minHours),
+            Entry(endDate.time.toFloat(), minHours)
+        )
+
+        val maxEntries = listOf(
+            Entry(startDate.time.toFloat(), maxHours),
+            Entry(endDate.time.toFloat(), maxHours)
+        )
+
+        val minDataSet = LineDataSet(minEntries, "Min Hours")
+        minDataSet.color = Color.GREEN
+        minDataSet.setCircleColor(Color.GREEN)
+        minDataSet.axisDependency = YAxis.AxisDependency.LEFT
+        minDataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val maxDataSet = LineDataSet(maxEntries, "Max Hours")
+        maxDataSet.color = Color.RED
+        maxDataSet.setCircleColor(Color.RED)
+        maxDataSet.axisDependency = YAxis.AxisDependency.LEFT
+        maxDataSet.valueTextColor = Color.WHITE // Set value text color to white
+
+        val lineData = LineData(dataSet, minDataSet, maxDataSet)
+        lineChart.data = lineData
+        lineChart.setNoDataTextColor(Color.WHITE) // Set "no data" text color to white
+        lineChart.description.textColor = Color.WHITE // Set description text color to white
+        lineChart.legend.textColor = Color.WHITE // Set legend text color to white
+
+        val xAxis = lineChart.xAxis
+        xAxis.textColor = Color.WHITE // Set x-axis text color to white
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.valueFormatter = object : ValueFormatter() {
+            private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            override fun getFormattedValue(value: Float): String {
+                return dateFormatter.format(Date(value.toLong()))
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.cancel()
+        }
+
+        val leftAxis = lineChart.axisLeft
+        leftAxis.textColor = Color.WHITE // Set left y-axis text color to white
+
+        val rightAxis = lineChart.axisRight
+        rightAxis.textColor = Color.WHITE // Set right y-axis text color to white
+
+        lineChart.invalidate() // Refresh the chart
+    }
+
+    private fun updatePieChart(entries: List<TimesheetEntry>) {
+        val calendar = Calendar.getInstance()
+        val endDate = calendar.time
+        calendar.add(Calendar.MONTH, -1)
+        val startDate = calendar.time
+
+        val groupedEntries = entries.filter { it.date in startDate..endDate }
+            .groupBy { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it.date) }
+        var totalDaysWithinRange = 0
+        var totalDays = groupedEntries.size
+
+        groupedEntries.forEach { (_, dailyEntries) ->
+            val totalHours = dailyEntries.sumByDouble {
+                calculateHours(it.startTime, it.endTime)
             }
-            .show()
+            if (totalHours in minHours..maxHours) {
+                totalDaysWithinRange++
+            }
+        }
+
+        val percentageWithinRange = if (totalDays > 0) (totalDaysWithinRange.toFloat() / totalDays) * 100 else 0f
+        val percentageOutsideRange = 100 - percentageWithinRange
+
+        val pieEntries = listOf(
+            PieEntry(percentageWithinRange, ""),
+            PieEntry(percentageOutsideRange, "")
+        )
+
+        val pieDataSet = PieDataSet(pieEntries, "")
+        pieDataSet.colors = listOf(Color.GREEN, Color.RED)
+        pieDataSet.valueTextColor = Color.TRANSPARENT // Set text color to transparent
+        pieDataSet.valueTextSize = 0f // Set text size to zero
+        pieDataSet.setDrawValues(false) // Explicitly disable drawing values
+
+        val pieData = PieData(pieDataSet)
+
+        // Custom ValueFormatter that returns an empty string
+        pieData.setValueFormatter(object : ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                return ""
+            }
+        })
+
+        pieChart.data = pieData
+        pieChart.setUsePercentValues(true)
+        pieChart.description.isEnabled = false
+        pieChart.setHoleColor(Color.TRANSPARENT)
+
+        // Set the legend text color to white and labels for the legend
+        val legend = pieChart.legend
+        legend.textColor = Color.WHITE
+        legend.orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.VERTICAL
+        legend.horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.RIGHT
+        legend.verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.CENTER
+        legend.setCustom(listOf(
+            com.github.mikephil.charting.components.LegendEntry("Within Range", com.github.mikephil.charting.components.Legend.LegendForm.DEFAULT, Float.NaN, Float.NaN, null, Color.GREEN),
+            com.github.mikephil.charting.components.LegendEntry("Outside Range", com.github.mikephil.charting.components.Legend.LegendForm.DEFAULT, Float.NaN, Float.NaN, null, Color.RED)
+        ))
+
+        pieChart.invalidate() // Refresh the chart
+
+        textViewChartStatus.text = if (percentageWithinRange < 20) "Status: Poor (No Badge)"
+        else if (percentageWithinRange < 50) "Status: Poor (Effort Badge)"
+        else if (percentageWithinRange < 70) "Status: Consistent  (Consistency Badge)"
+        else "Status: Excellence (Excellence Badge)"
+    }
+
+    private fun calculateHours(startTime: String, endTime: String): Double {
+        val start = SimpleDateFormat("HH:mm", Locale.getDefault()).parse(startTime).time
+        val end = SimpleDateFormat("HH:mm", Locale.getDefault()).parse(endTime).time
+        return (end - start) / (1000 * 60 * 60).toDouble() // Convert milliseconds to hours
     }
 
     private fun showAddCategoryDialog() {
@@ -177,6 +385,50 @@ class HomeActivity : AppCompatActivity() {
             }
             .show()
         dialogImageViewCategoryPhoto.setImageURI(selectedImageUri)
+    }
+
+    private fun showSetMinHoursDialog() {
+        val layoutInflater = LayoutInflater.from(this)
+        val view = layoutInflater.inflate(R.layout.dialog_set_hours, null)
+        val editTextMinHours = view.findViewById<EditText>(R.id.editText_hours)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Set Minimum Hours")
+            .setView(view)
+            .setPositiveButton("Set") { dialog, _ ->
+                minHours = editTextMinHours.text.toString().toFloatOrNull() ?: 0f
+                SettingsManager.saveWorkHours(this, minHours, maxHours)
+                TimesheetManager.loadTimesheetEntriesFromFirestore { timesheetEntries ->
+                    updatePieChart(timesheetEntries)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
+    }
+
+    private fun showSetMaxHoursDialog() {
+        val layoutInflater = LayoutInflater.from(this)
+        val view = layoutInflater.inflate(R.layout.dialog_set_hours, null)
+        val editTextMaxHours = view.findViewById<EditText>(R.id.editText_hours)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Set Maximum Hours")
+            .setView(view)
+            .setPositiveButton("Set") { dialog, _ ->
+                maxHours = editTextMaxHours.text.toString().toFloatOrNull() ?: 24f // Default to 24 hours if input is invalid
+                SettingsManager.saveWorkHours(this, minHours, maxHours)
+                TimesheetManager.loadTimesheetEntriesFromFirestore { timesheetEntries ->
+                    updatePieChart(timesheetEntries)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
     }
 
     private fun showImagePickerDialog() {

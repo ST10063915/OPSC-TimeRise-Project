@@ -98,4 +98,16 @@ object TimesheetManager {
                 (end - start) / (1000 * 60 * 60).toDouble() // Convert milliseconds to hours
             }.toFloat()
     }
+
+    fun getEntriesWithinDateRange(startDate: Date, endDate: Date): List<TimesheetEntry> {
+        return timesheetEntries.filter { it.date in startDate..endDate }
+    }
+
+    fun getAllEntries(): List<TimesheetEntry> {
+        return timesheetEntries
+    }
+
+    fun getEntriesInDateRange(startDate: Date, endDate: Date): List<TimesheetEntry> {
+        return timesheetEntries.filter { it.date in startDate..endDate }
+    }
 }

@@ -55,6 +55,7 @@
         android:hint="Password"
         android:paddingLeft="20dp"
         android:textSize="16dp"
+        android:inputType="textPassword"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
